@@ -8,9 +8,11 @@ import torch
 
 #from tasks.pvqa_model import PVQAModel
 
-baseUrl = 'E:/UoM/__Sem7/fyp/Project/PVQA0/'
+baseUrl = 'D:/UoM/__Sem7/fyp/Project/PVQA0/'
 
-model_dir ="E:/UoM/__Sem7/fyp/Models/model_logit_fc_improved"
+generatedDataUrl = 'D:/1Projects/paradox-medvqa/backend/fasterrcnn/data/pvqa/val3.csv'
+
+model_dir ="D:/UoM/__Sem7/fyp/Models/model_logit_fc_improved"
 
 
 FIELDNAMES = ['image_id', 'image_w', 'image_h',
@@ -25,8 +27,11 @@ def getModel():
     model = model.cpu() 
     return model
 
-def load_tsv(split: str):
-    tsv_file = baseUrl+'data/pvqa/images/%s%s.csv' % (split, '1')
+def load_tsv(split: str, dataType="pvqa"):
+    if(dataType=="pvqa"):
+        tsv_file = baseUrl+'data/pvqa/images/%s%s.csv' % (split, '1')
+    else:
+        tsv_file = generatedDataUrl
     df = pd.read_csv(tsv_file, delimiter='\t', names=FIELDNAMES)
 
     data = []
@@ -51,23 +56,23 @@ def load_tsv(split: str):
 
     return data
 
-def getDatum(imageName):
-    [split,i] = imageName.split("_")
-    i = int(i)
-    tsv_file = baseUrl+'data/pvqa/images/%s%s.csv' % (split, '1')
-    df = pd.read_csv(tsv_file, delimiter='\t', names=FIELDNAMES)
-    result ={}
-    result['num_boxes'] = df['num_boxes'][i]
-    boxes = df['boxes'][i]
-    buf = base64.b64decode(boxes[1:])
-    temp = np.frombuffer(buf, dtype=np.float64).astype(np.float32)
-    result['boxes'] = temp.reshape(result['num_boxes'], -1)
-    features = df['features'][i]
-    buf = base64.b64decode(features[1:])
-    temp = np.frombuffer(buf, dtype=np.float32)
-    result['features'] = temp.reshape(result['num_boxes'], -1)
-    print(split,i)
-    return result
+# def getDatum(imageName):
+#     [split,i] = imageName.split("_")
+#     i = int(i)
+#     tsv_file = baseUrl+'data/pvqa/images/%s%s.csv' % (split, '1')
+#     df = pd.read_csv(tsv_file, delimiter='\t', names=FIELDNAMES)
+#     result ={}
+#     result['num_boxes'] = df['num_boxes'][i]
+#     boxes = df['boxes'][i]
+#     buf = base64.b64decode(boxes[1:])
+#     temp = np.frombuffer(buf, dtype=np.float64).astype(np.float32)
+#     result['boxes'] = temp.reshape(result['num_boxes'], -1)
+#     features = df['features'][i]
+#     buf = base64.b64decode(features[1:])
+#     temp = np.frombuffer(buf, dtype=np.float32)
+#     result['features'] = temp.reshape(result['num_boxes'], -1)
+#     print(split,i)
+#     return result
 
 def loadData():
     splits = ['train', 'test', 'val']
@@ -80,12 +85,22 @@ def loadData():
             imgid2img[datum['img_id']] = datum
     return imgid2img 
 
-def predict(model, label2ans, imageName, question, imgid2img):
-    img_id = imageName.strip()
-
-    image_fet = imgid2img[img_id]
-    feats = torch.tensor([image_fet['features']])
-    boxes = torch.tensor([image_fet['boxes']])
+def predict(model, label2ans, imageName, question, imgid2img, dataType="pvqa"):
+    if(dataType=="pvqa"):
+        img_id = imageName.strip()
+        image_fet = imgid2img[img_id]
+        feats = torch.tensor([image_fet['features']])
+        boxes = torch.tensor([image_fet['boxes']])
+    else:
+        img_id = "val_0000"
+        imgid2img2 = {}
+        data1 = load_tsv("val","other")
+        for datum in data1:
+            imgid2img2[datum['img_id']] = datum
+        image_fet = imgid2img2[img_id]
+        feats = torch.tensor([image_fet['features']])
+        boxes = torch.tensor([image_fet['boxes']])
+    
     # Datum = getDatum(imageName)
     answer = ""
     # feats = torch.tensor([Datum['features']])
@@ -95,17 +110,27 @@ def predict(model, label2ans, imageName, question, imgid2img):
     with torch.no_grad():
         feats, boxes = feats.cpu(), boxes.cpu()
         sents = [question]
-        targets = ['yes']
+        targets = ['']
         logit = model(feats, boxes, sents, targets)
+        m = torch.nn.Softmax(dim=1)
+        logit2 = m(logit)
         score, label = logit.max(1)
+        score2, label2 = logit2.max(1)
+        label = int(label[0])
     answer = label2ans[label]
+    #answer2 = label2ans[label2]
+    print(logit)
+    print(logit2)
     print(label)
     print(score)
-    return answer,score 
+    print(label2)
+    print(score2)
+    return answer,round(score2.item()*100, 3) 
 
 def getLable2Ans():
     label2ans = pickle.load(
         open(baseUrl+'data/pvqa/qas/trainval_label2ans.pkl', 'rb'))
+    print(label2ans)
     return label2ans
 
 

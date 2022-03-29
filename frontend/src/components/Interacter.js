@@ -46,9 +46,9 @@ const Interacter = () => {
             {(data.length===0) ? (
                 <div></div>
             ) : (
-                <div className="rounded border border-dark mt-4 overflow-auto" style={{height: "45vh"}} >
+                <div className="rounded border border-dark mt-4" style={{height: "45vh"}} >
             {data.map((datum, index) => (
-            <div className="mb-4 mt-2"  key={index}>
+            <div className="mb-4 mt-2 mr-1"  key={index}>
                 <h6 style={{paddingLeft: "10px", textAlign: "left"}}>Q: {datum.q}</h6>
                 {datum.a===false && <ThreeDots color="#00BFFF" height={20} width={100} />}
                 {!datum.a===false &&   <p style={{paddingLeft: "30px", textAlign: "left"}}>A: {datum.a}</p> }

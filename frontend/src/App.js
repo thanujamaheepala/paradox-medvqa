@@ -103,7 +103,7 @@ function App() {
               <div><label className="form-label" htmlFor="customFile">Image</label>
               <input type="file" accept=".jpg,.jpeg,.png" className="form-control rounded border border-dark" id="file" onChange={onSelectFile}/>
               {!isUploaded &&   <button type="button" className="btn btn-dark btn-block mt-2" onClick={handleUpload}>Upload</button> }
-              {isUploaded &&   <button type="button" className="btn btn-dark btn-block mt-2" onClick={handleChange}>Change</button> }
+              {isUploaded &&   <button type="button" className="btn btn-dark btn-block mt-2" disabled onClick={handleUpload}>Upload</button> }
               </div>
               {(selectedFile && isUploaded) &&  <img src={preview} className="img-fluid rounded border border-dark mt-4" alt="Responsive image" /> }
           </Fragment>
@@ -120,7 +120,7 @@ function App() {
               ) : (
                   <div className="rounded border border-dark mt-4 overflow-auto" style={{height: "45vh"}} >
               {data.map((datum, index) => (
-              <div className="mb-4 mt-2"  key={index}>
+              <div className="mb-4 mt-2 mr-1"  key={index}>
                   <h6 style={{paddingLeft: "10px", textAlign: "left"}}>Q: {datum.q}</h6>
                   {datum.a===false && <ThreeDots color="#00BFFF" height={20} width={100} />}
                   {!datum.a===false &&   <p style={{paddingLeft: "30px", textAlign: "left"}}>A: {datum.a}</p> }

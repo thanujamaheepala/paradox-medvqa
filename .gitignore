@@ -1,0 +1,6 @@
+*pyc
+/backend/fasterrcnn/faster_rcnn_res101_bccd.pth
+/backend/fasterrcnn/lib/build
+/backend/fasterrcnn/lib/faster_rcnn.egg-info
+/New Text Document.txt
+
