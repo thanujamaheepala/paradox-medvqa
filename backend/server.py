@@ -24,8 +24,44 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 model = PVQA.getModel()
 label2ans = PVQA.getLable2Ans()
-imgid2img = PVQA.loadData()
+#imgid2img = PVQA.loadData()
+imgid2img = ""
 dataType = "pvqa"
+
+# @app.route('/upload', methods=['POST'])
+# def fileUpload():
+#     global dataType
+#     target=os.path.join(UPLOAD_FOLDER)
+#     target2=os.path.join(UPLOAD_FOLDER_RCNN)
+#     if not os.path.isdir(target):
+#         os.mkdir(target)
+    
+#     file = request.files['file'] 
+#     filename = secure_filename(file.filename)
+#     destination="/".join([target, "image.jpg"])
+#     destination2="/".join([target2, "val_0000.jpg"])
+#     file.save(destination)
+#     shutil.copyfile(destination, destination2)
+
+#     imageName = filename.strip().split(".")[0]
+#     try:
+#         (split, id) = imageName.strip().split('_')
+
+#         if((split in ["val","train","test"]) and (len(id)==4)):
+#             dataType = "pvqa"
+#         else:
+#             dataType="other"
+#     except ValueError:
+#         dataType="other"
+
+#     if(dataType!="pvqa"):
+#         os.chdir('fasterrcnn')
+#         cmd = "bash run_bccd2.sh"
+#         returned_value = os.system(cmd)
+#         os.chdir('../')
+
+#     response="Uploaded"
+#     return response
 
 @app.route('/upload', methods=['POST'])
 def fileUpload():
@@ -52,15 +88,21 @@ def fileUpload():
             dataType="other"
     except ValueError:
         dataType="other"
-
+    devData = []
     if(dataType!="pvqa"):
         os.chdir('fasterrcnn')
         cmd = "bash run_bccd2.sh"
         returned_value = os.system(cmd)
         os.chdir('../')
+    else:
+        devData = PVQA.getDevData(split, imageName)
 
-    response="Uploaded"
-    return response
+    data = {
+            "Uploaded" : 1,
+            "devData" : devData
+        }
+    
+    return jsonify(data)
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -70,7 +112,12 @@ def predict():
     imagename = filename.strip().split(".")[0]
     answer,score = PVQA.predict(model, label2ans, imagename, question, imgid2img, dataType)
 
-    return answer+" ---> "+str(score)+"%"
+    data = {
+            "answer" : answer,
+            "score" : score,
+        }
+        
+    return jsonify(data)
 
 if __name__ == "__main__":
     if args.run:
